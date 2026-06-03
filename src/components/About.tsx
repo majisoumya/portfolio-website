@@ -13,7 +13,7 @@ const About = () => {
       const { data, error } = await supabase.from("settings").select("*");
       if (!error && data) {
         const newContent = { ...content };
-        data.forEach(item => {
+        data.forEach((item: any) => {
           if (item.key in newContent) {
             (newContent as any)[item.key] = item.value;
           }

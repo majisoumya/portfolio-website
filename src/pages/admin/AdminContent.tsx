@@ -38,7 +38,7 @@ const AdminContent = () => {
       } else if (data) {
         const newContent = { ...content };
         let hasContent = false;
-        data.forEach(item => {
+        data.forEach((item: any) => {
           if (item.key in newContent) {
             (newContent as any)[item.key] = item.value;
             hasContent = true;

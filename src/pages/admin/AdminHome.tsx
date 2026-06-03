@@ -24,7 +24,7 @@ const AdminHome = () => {
         setDbErrorMsg(`Failed to fetch: ${error.message}`);
       } else if (data) {
         const newContent = { ...content };
-        data.forEach(item => {
+        data.forEach((item: any) => {
           if (item.key in newContent) {
             (newContent as any)[item.key] = item.value;
           }

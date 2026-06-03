@@ -51,7 +51,7 @@ const AdminSettings = () => {
     const fileUrl = data.publicUrl;
 
     // Try updating first
-    const { error: updateError, count } = await supabase.from("settings")
+    const { error: updateError } = await supabase.from("settings")
       .update({ value: fileUrl })
       .eq('key', 'resume_url');
       

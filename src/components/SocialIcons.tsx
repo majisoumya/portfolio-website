@@ -26,7 +26,7 @@ const SocialIcons = () => {
       if (!error && data) {
         let resume = "#";
         const newSocials = { ...socials };
-        data.forEach(item => {
+        data.forEach((item: any) => {
           if (item.key === "resume_url") {
             resume = item.value;
           } else if (item.key in newSocials) {

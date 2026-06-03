@@ -75,7 +75,7 @@ const AdminLibrary = () => {
         canvas.height = viewport.height;
         canvas.width = viewport.width;
         
-        await page.render({ canvasContext: context, viewport }).promise;
+        await page.render({ canvasContext: context, viewport } as any).promise;
         
         // Convert canvas to blob
         canvas.toBlob((blob) => {

@@ -11,7 +11,7 @@ const AdminResume = () => {
       const { data } = await supabase.from("settings").select("*");
       if (data) {
         const newContent = { ...content };
-        data.forEach(item => {
+        data.forEach((item: any) => {
           if (item.key === 'resume_url') {
             (newContent as any)[item.key] = item.value;
           }

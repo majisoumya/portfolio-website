@@ -11,7 +11,7 @@ const AdminAbout = () => {
       const { data } = await supabase.from("settings").select("*");
       if (data) {
         const newContent = { ...content };
-        data.forEach(item => {
+        data.forEach((item: any) => {
           if (item.key === 'about_title' || item.key === 'about_desc') {
             (newContent as any)[item.key] = item.value;
           }

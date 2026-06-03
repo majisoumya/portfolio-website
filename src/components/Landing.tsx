@@ -2,8 +2,17 @@ import { PropsWithChildren, useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import "./styles/Landing.css";
 
+interface LandingContent {
+  hero_greeting: string;
+  hero_firstname: string;
+  hero_lastname: string;
+  hero_role_title: string;
+  hero_role_1: string;
+  hero_role_2: string;
+}
+
 const Landing = ({ children }: PropsWithChildren) => {
-  const [content, setContent] = useState({
+  const [content, setContent] = useState<LandingContent>({
     hero_greeting: "Hello! I'm",
     hero_firstname: "SOUMYADIP",
     hero_lastname: "MAJI",
@@ -17,7 +26,7 @@ const Landing = ({ children }: PropsWithChildren) => {
       const { data, error } = await supabase.from("settings").select("*");
       if (!error && data) {
         const newContent = { ...content };
-        data.forEach(item => {
+        data.forEach((item: any) => {
           if (item.key in newContent) {
             (newContent as any)[item.key] = item.value;
           }

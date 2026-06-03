@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 const AdminSkills = () => {
   return (
     <div className="admin-page-container">
