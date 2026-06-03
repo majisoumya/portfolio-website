@@ -6,10 +6,40 @@ import {
 } from "react-icons/fa6";
 import "./styles/SocialIcons.css";
 import { TbNotes } from "react-icons/tb";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "../lib/supabase";
 import HoverLinks from "./HoverLinks";
 
 const SocialIcons = () => {
+  const [resumeUrl, setResumeUrl] = useState("#");
+  const [socials, setSocials] = useState({
+    social_github: "https://github.com/",
+    social_linkedin: "https://linkedin.com/",
+    social_twitter: "https://x.com/",
+    social_instagram: "https://instagram.com/"
+  });
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const { data, error } = await supabase.from("settings").select("*");
+      
+      if (!error && data) {
+        let resume = "#";
+        const newSocials = { ...socials };
+        data.forEach(item => {
+          if (item.key === "resume_url") {
+            resume = item.value;
+          } else if (item.key in newSocials) {
+            (newSocials as any)[item.key] = item.value;
+          }
+        });
+        setResumeUrl(resume);
+        setSocials(newSocials);
+      }
+    };
+    fetchSettings();
+  }, []);
+
   useEffect(() => {
     const social = document.getElementById("social") as HTMLElement;
 
@@ -60,27 +90,27 @@ const SocialIcons = () => {
     <div className="icons-section">
       <div className="social-icons" data-cursor="icons" id="social">
         <span>
-          <a href="https://github.com/rajeshchityal" target="_blank">
+          <a href={socials.social_github} target="_blank" rel="noreferrer">
             <FaGithub />
           </a>
         </span>
         <span>
-          <a href="https://www.linkedin.com/in/rajeshchityal" target="_blank">
+          <a href={socials.social_linkedin} target="_blank" rel="noreferrer">
             <FaLinkedinIn />
           </a>
         </span>
         <span>
-          <a href="https://x.com/rajeshchityal" target="_blank">
+          <a href={socials.social_twitter} target="_blank" rel="noreferrer">
             <FaXTwitter />
           </a>
         </span>
         <span>
-          <a href="https://www.instagram.com/rajeshchityal" target="_blank">
+          <a href={socials.social_instagram} target="_blank" rel="noreferrer">
             <FaInstagram />
           </a>
         </span>
       </div>
-      <a className="resume-button" href="#">
+      <a className="resume-button" href={resumeUrl} target="_blank" rel="noreferrer">
         <HoverLinks text="RESUME" />
         <span>
           <TbNotes />

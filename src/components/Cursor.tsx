@@ -15,11 +15,10 @@ const Cursor = () => {
     });
     requestAnimationFrame(function loop() {
       if (!hover) {
-        const delay = 6;
+        const delay = 3; // Reduced from 6 for faster movement
         cursorPos.x += (mousePos.x - cursorPos.x) / delay;
         cursorPos.y += (mousePos.y - cursorPos.y) / delay;
-        gsap.to(cursor, { x: cursorPos.x, y: cursorPos.y, duration: 0.1 });
-        // cursor.style.transform = `translate(${cursorPos.x}px, ${cursorPos.y}px)`;
+        gsap.set(cursor, { x: cursorPos.x, y: cursorPos.y });
       }
       requestAnimationFrame(loop);
     });

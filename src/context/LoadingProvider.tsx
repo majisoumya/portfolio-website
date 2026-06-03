@@ -5,6 +5,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { useLocation } from "react-router-dom";
 import Loading from "../components/Loading";
 
 interface LoadingType {
@@ -18,12 +19,21 @@ export const LoadingContext = createContext<LoadingType | null>(null);
 export const LoadingProvider = ({ children }: PropsWithChildren) => {
   const [isLoading, setIsLoading] = useState(true);
   const [loading, setLoading] = useState(0);
+  const location = useLocation();
 
   const value = {
     isLoading,
     setIsLoading,
     setLoading,
   };
+  
+  useEffect(() => {
+    if (location.pathname.startsWith("/admin") || location.pathname.startsWith("/login")) {
+      setIsLoading(false);
+      setLoading(100);
+    }
+  }, [location.pathname]);
+
   useEffect(() => {}, [loading]);
 
   return (

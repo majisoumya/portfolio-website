@@ -1,28 +1,54 @@
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useState, useEffect } from "react";
+import { supabase } from "../lib/supabase";
 import "./styles/Landing.css";
 
 const Landing = ({ children }: PropsWithChildren) => {
+  const [content, setContent] = useState({
+    hero_greeting: "Hello! I'm",
+    hero_firstname: "SOUMYADIP",
+    hero_lastname: "MAJI",
+    hero_role_title: "A ML ENGINEERE",
+    hero_role_1: "Developer",
+    hero_role_2: "Engineer"
+  });
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      const { data, error } = await supabase.from("settings").select("*");
+      if (!error && data) {
+        const newContent = { ...content };
+        data.forEach(item => {
+          if (item.key in newContent) {
+            (newContent as any)[item.key] = item.value;
+          }
+        });
+        setContent(newContent);
+      }
+    };
+    fetchContent();
+  }, []);
+
   return (
     <>
       <div className="landing-section" id="landingDiv">
         <div className="landing-container">
           <div className="landing-intro">
-            <h2>Hello! I'm</h2>
+            <h2>{content.hero_greeting}</h2>
             <h1>
-              SOUMYADIP
+              {content.hero_firstname}
               <br />
-              <span>MAJI</span>
+              <span>{content.hero_lastname}</span>
             </h1>
           </div>
           <div className="landing-info">
-            <h3>A ML ENGINEERE</h3>
+            <h3>{content.hero_role_title}</h3>
             <h2 className="landing-info-h2">
-              <div className="landing-h2-1">Developer</div>
-              <div className="landing-h2-2">Engineer</div>
+              <div className="landing-h2-1">{content.hero_role_1}</div>
+              <div className="landing-h2-2">{content.hero_role_2}</div>
             </h2>
             <h2>
-              <div className="landing-h2-info">Engineer</div>
-              <div className="landing-h2-info-1">Developer</div>
+              <div className="landing-h2-info">{content.hero_role_2}</div>
+              <div className="landing-h2-info-1">{content.hero_role_1}</div>
             </h2>
           </div>
         </div>

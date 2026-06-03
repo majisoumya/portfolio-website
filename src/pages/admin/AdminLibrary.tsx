@@ -1,0 +1,226 @@
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { supabase } from "../../lib/supabase";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+
+// Configure PDF.js worker natively using Vite
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+
+const AdminLibrary = () => {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [generatingThumbnail, setGeneratingThumbnail] = useState(false);
+  
+  const [title, setTitle] = useState("");
+  const [itemType, setItemType] = useState("Notes");
+  const [description, setDescription] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [imageFile, setImageFile] = useState<Blob | null>(null);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => { fetchLibrary(); }, []);
+
+  const fetchLibrary = async () => {
+    setLoading(true);
+    const { data } = await supabase.from("library").select("*").order("created_at", { ascending: false });
+    setItems(data || []);
+    setLoading(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Delete this file?")) return;
+
+    // Remove files from storage
+    const item = items.find(i => i.id === id);
+    if (item) {
+      const pathsToDelete = [];
+      if (item.file_url) {
+        const path = item.file_url.split('/portfolio-assets/')[1];
+        if (path) pathsToDelete.push(path);
+      }
+      if (item.image_url) {
+        const path = item.image_url.split('/portfolio-assets/')[1];
+        if (path) pathsToDelete.push(path);
+      }
+      if (pathsToDelete.length > 0) {
+        await supabase.storage.from('portfolio-assets').remove(pathsToDelete);
+      }
+    }
+
+    await supabase.from("library").delete().eq("id", id);
+    fetchLibrary();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0] || null;
+    setFile(selectedFile);
+    setImageFile(null); // Reset old thumbnail
+
+    if (selectedFile && selectedFile.type === "application/pdf") {
+      try {
+        setGeneratingThumbnail(true);
+        const arrayBuffer = await selectedFile.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const page = await pdf.getPage(1);
+        
+        const viewport = page.getViewport({ scale: 1.5 });
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        
+        if (!context) throw new Error("Could not get canvas context");
+        
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        
+        await page.render({ canvasContext: context, viewport }).promise;
+        
+        // Convert canvas to blob
+        canvas.toBlob((blob) => {
+          if (blob) setImageFile(blob);
+          setGeneratingThumbnail(false);
+        }, "image/png");
+      } catch (err) {
+        console.error("Failed to generate PDF thumbnail:", err);
+        setGeneratingThumbnail(false);
+      }
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (localStorage.getItem("demo_admin")) return alert("Cannot save in demo mode.");
+    if (!file) return alert("Please select a PDF file.");
+
+    setUploading(true);
+    
+    // Upload PDF File
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `library/${fileName}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('portfolio-assets')
+      .upload(filePath, file);
+      
+    if (uploadError) {
+      alert("Failed to upload PDF: " + uploadError.message + "\n(Did you log in?)");
+      setUploading(false);
+      return;
+    }
+
+    const { data: fileData } = supabase.storage.from('portfolio-assets').getPublicUrl(filePath);
+    const fileUrl = fileData.publicUrl;
+
+    // Upload Cover Image (Generated)
+    let imageUrl = null;
+    if (imageFile) {
+      const imgPath = `library/covers/${Math.random()}.png`;
+      const { error: imgError } = await supabase.storage
+        .from('portfolio-assets')
+        .upload(imgPath, imageFile, { contentType: 'image/png' });
+        
+      if (!imgError) {
+        const { data: imgData } = supabase.storage.from('portfolio-assets').getPublicUrl(imgPath);
+        imageUrl = imgData.publicUrl;
+      }
+    }
+
+    const { error: dbError } = await supabase.from("library").insert([{ 
+      title, 
+      item_type: itemType, 
+      description, 
+      file_url: fileUrl,
+      image_url: imageUrl
+    }]);
+
+    if (dbError) {
+      console.error(dbError);
+      alert("Database Insert Failed: " + dbError.message + "\n\nDid you run the SQL command to add image_url column?");
+      setUploading(false);
+      return;
+    }
+    
+    setTitle(""); setDescription(""); setFile(null); setImageFile(null);
+    setUploading(false);
+    setIsModalOpen(false);
+    fetchLibrary();
+  };
+
+  return (
+    <div className="admin-page-container">
+      <div className="admin-list-header">
+        <h2 className="admin-page-title" style={{marginBottom: 0}}>Manage Library</h2>
+        <button className="admin-btn-add" onClick={() => setIsModalOpen(true)}>
+          + Add File
+        </button>
+      </div>
+
+      {isModalOpen && createPortal(
+        <div className="admin-modal-overlay">
+          <div className="admin-modal-content">
+            <div className="admin-modal-header">
+              <h3>Upload New File</h3>
+              <button className="btn-close" onClick={() => setIsModalOpen(false)}>&times;</button>
+            </div>
+            <form onSubmit={handleSubmit} style={{display: "flex", flexDirection: "column", gap: "15px"}}>
+              <div style={{display: "flex", gap: "15px"}}>
+                <input className="admin-input" style={{flex: 2}} placeholder="Title" value={title} onChange={e => setTitle(e.target.value)} required />
+                <select className="admin-input" style={{flex: 1}} value={itemType} onChange={e => setItemType(e.target.value)}>
+                  <option value="Notes">Notes</option>
+                  <option value="Book">Book</option>
+                </select>
+              </div>
+              <textarea className="admin-input" placeholder="Description" rows={2} value={description} onChange={e => setDescription(e.target.value)} />
+
+              <div>
+                <label style={{display: 'block', marginBottom: '8px', color: '#94a3b8', fontSize: '13px', textTransform: 'uppercase'}}>PDF File</label>
+                <input type="file" accept=".pdf" onChange={handleFileChange} required style={{color: '#fff'}} />
+                {generatingThumbnail && <span style={{fontSize: '12px', color: '#94a3b8', display: 'block', marginTop: '4px'}}>Generating cover thumbnail automatically...</span>}
+                {imageFile && !generatingThumbnail && <span style={{fontSize: '12px', color: '#00d2ff', display: 'block', marginTop: '4px'}}>✓ Cover generated automatically!</span>}
+              </div>
+              
+              <button type="submit" disabled={uploading || generatingThumbnail} className="admin-btn-primary">
+                {uploading ? "Uploading..." : "Upload File"}
+              </button>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+      
+      {loading ? (
+        <div>Loading...</div>
+      ) : items.length === 0 ? (
+        <div style={{color: '#5f6368'}}>No files uploaded.</div>
+      ) : (
+        <div className="admin-grid">
+          {items.map(item => (
+            <div className="admin-thumbnail-card" key={item.id}>
+              {item.image_url ? (
+                <img src={item.image_url} alt={item.title} className="thumbnail-image" style={{objectFit: 'contain', padding: 0, background: '#f8f9fa', height: '160px'}} />
+              ) : (
+                <div className="thumbnail-image" style={{fontSize: '48px', height: '160px', padding: 0}}>
+                  📄
+                </div>
+              )}
+              <div className="thumbnail-content">
+                <h4>{item.title}</h4>
+                <p>{item.item_type}</p>
+                <p style={{marginTop: '8px', fontStyle: 'italic'}}>{item.description}</p>
+              </div>
+              <div className="thumbnail-actions">
+                <a href={item.file_url} target="_blank" rel="noreferrer" className="btn-edit" style={{textDecoration: 'none', textAlign: 'center', flex: 1}}>View PDF</a>
+                <button className="btn-delete" onClick={() => handleDelete(item.id)} style={{flex: 1}}>Delete</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AdminLibrary;
