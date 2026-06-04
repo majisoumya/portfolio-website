@@ -42,7 +42,7 @@ const Navbar = () => {
   return (
     <>
       <div className="header">
-        <a href="/#" className="navbar-title" data-cursor="disable">
+        <a href="/login" className="navbar-title" data-cursor="disable">
           RC
         </a>
         <a
