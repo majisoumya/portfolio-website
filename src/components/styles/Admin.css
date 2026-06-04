@@ -784,7 +784,28 @@
   }
 
   .admin-sidebar-bottom {
-    display: none;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 0 8px;
+    width: auto;
+    border-top: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .admin-time-box {
+    flex-direction: column;
+    padding: 8px;
+    justify-content: center;
+  }
+
+  .admin-time-box .nav-icon {
+    margin: 0;
+    font-size: 24px;
+  }
+
+  .admin-time-box .nav-label {
+    display: none !important; /* Hide labels on mobile to save space */
   }
 
   .admin-main {
