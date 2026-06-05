@@ -13,6 +13,7 @@ const AdminLibrary = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [generatingThumbnail, setGeneratingThumbnail] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   
   const [title, setTitle] = useState("");
   const [itemType, setItemType] = useState("Notes");
@@ -21,6 +22,15 @@ const AdminLibrary = () => {
   const [imageFile, setImageFile] = useState<Blob | null>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const filteredItems = items.filter(item => {
+    const query = searchQuery.toLowerCase();
+    return (
+      (item.title && item.title.toLowerCase().includes(query)) ||
+      (item.description && item.description.toLowerCase().includes(query)) ||
+      (item.item_type && item.item_type.toLowerCase().includes(query))
+    );
+  });
 
   useEffect(() => { fetchLibrary(); }, []);
 
@@ -187,11 +197,23 @@ const AdminLibrary = () => {
 
   return (
     <div className="admin-page-container">
-      <div className="admin-list-header">
-        <h2 className="admin-page-title" style={{marginBottom: 0}}>Manage Library</h2>
-        <button className="admin-btn-add" onClick={() => setIsModalOpen(true)}>
-          + Add File
-        </button>
+      <div className="admin-list-header" style={{flexDirection: 'column', alignItems: 'stretch', gap: '20px'}}>
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+          <h2 className="admin-page-title" style={{marginBottom: 0}}>Manage Library</h2>
+          <button className="admin-btn-add" onClick={() => setIsModalOpen(true)}>
+            + Add File
+          </button>
+        </div>
+        <div style={{display: 'flex', gap: '10px'}}>
+          <input 
+            type="text" 
+            className="admin-input" 
+            placeholder="Search by book name, type, or keyword..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ width: '100%', maxWidth: '100%' }}
+          />
+        </div>
       </div>
 
       {isModalOpen && createPortal(
@@ -254,11 +276,11 @@ const AdminLibrary = () => {
       
       {loading ? (
         <div>Loading...</div>
-      ) : items.length === 0 ? (
-        <div style={{color: '#5f6368'}}>No files uploaded.</div>
+      ) : filteredItems.length === 0 ? (
+        <div style={{color: '#5f6368'}}>{items.length === 0 ? "No files uploaded." : "No files found matching your search."}</div>
       ) : (
         <div className="admin-grid">
-          {items.map(item => (
+          {filteredItems.map(item => (
             <div className="admin-thumbnail-card" key={item.id}>
               {item.image_url ? (
                 <img src={item.image_url} alt={item.title} className="thumbnail-image" style={{objectFit: 'contain', padding: 0, background: '#f8f9fa', height: '160px'}} />
