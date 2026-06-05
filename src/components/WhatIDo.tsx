@@ -90,8 +90,8 @@ const WhatIDo = () => {
               <h3>MACHINE LEARNING ENGINEER</h3>
               <h4>Building Intelligent AI Systems</h4>
               <p>
-                Developing machine learning models and AI solutions that transform data into actionable insights.
-                From predictive analytics to intelligent automation, I create scalable ML systems.
+                Developing machine learning models and AI system.
+                I create ML systems.
               </p>
               <h5>Skillset & tools</h5>
               <div className="what-content-flex">
