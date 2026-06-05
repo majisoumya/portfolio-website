@@ -69,6 +69,8 @@
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   padding: 30px;
+  height: auto;
+  min-height: min-content;
   transition: transform 0.3s ease, background 0.3s ease;
 }
 
@@ -167,6 +169,8 @@
   color: #94a3b8;
   line-height: 1.7;
   margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* Responsive adjustments for Mobile - convert back to left-aligned */

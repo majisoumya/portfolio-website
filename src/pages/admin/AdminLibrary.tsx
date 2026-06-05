@@ -11,6 +11,7 @@ const AdminLibrary = () => {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [generatingThumbnail, setGeneratingThumbnail] = useState(false);
   
   const [title, setTitle] = useState("");
@@ -95,18 +96,53 @@ const AdminLibrary = () => {
     if (!file) return alert("Please select a PDF file.");
 
     setUploading(true);
+    setUploadProgress(0);
     
     // Upload PDF File
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random()}.${fileExt}`;
     const filePath = `library/${fileName}`;
     
-    const { error: uploadError } = await supabase.storage
-      .from('portfolio-assets')
-      .upload(filePath, file);
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
-    if (uploadError) {
-      alert("Failed to upload PDF: " + uploadError.message + "\n(Did you log in?)");
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || supabaseAnonKey;
+      
+      const uploadUrl = `${supabaseUrl}/storage/v1/object/portfolio-assets/${filePath}`;
+      
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', uploadUrl, true);
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.setRequestHeader('apikey', supabaseAnonKey);
+        xhr.setRequestHeader('Content-Type', file.type || 'application/pdf');
+        
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setUploadProgress(Math.round((e.loaded / e.total) * 100));
+          }
+        };
+        
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(JSON.parse(xhr.responseText));
+          } else {
+            let errorMsg = xhr.statusText;
+            try {
+              const res = JSON.parse(xhr.responseText);
+              if (res.message) errorMsg = res.message;
+            } catch (e) {}
+            reject(new Error(errorMsg));
+          }
+        };
+        
+        xhr.onerror = () => reject(new Error("Network Error"));
+        xhr.send(file);
+      });
+    } catch (uploadError: any) {
+      alert("Failed to upload PDF: " + uploadError.message + "\\n(Did you log in?)");
       setUploading(false);
       return;
     }
@@ -182,8 +218,33 @@ const AdminLibrary = () => {
                 {imageFile && !generatingThumbnail && <span style={{fontSize: '12px', color: '#00d2ff', display: 'block', marginTop: '4px'}}>✓ Cover generated automatically!</span>}
               </div>
               
-              <button type="submit" disabled={uploading || generatingThumbnail} className="admin-btn-primary">
-                {uploading ? "Uploading..." : "Upload File"}
+              <button 
+                type="submit" 
+                disabled={uploading || generatingThumbnail} 
+                className="admin-btn-primary"
+                style={{ position: 'relative', overflow: 'hidden' }}
+              >
+                {uploading ? (
+                  <>
+                    <span style={{ position: 'relative', zIndex: 1 }}>
+                      {uploadProgress < 100 ? `Uploading... ${uploadProgress}%` : 'Finishing...'}
+                    </span>
+                    <div 
+                      style={{ 
+                        position: 'absolute', 
+                        top: 0, 
+                        left: 0, 
+                        height: '100%', 
+                        width: `${uploadProgress}%`, 
+                        backgroundColor: 'rgba(255, 255, 255, 0.2)', 
+                        transition: 'width 0.3s ease',
+                        zIndex: 0
+                      }} 
+                    />
+                  </>
+                ) : (
+                  "Upload File"
+                )}
               </button>
             </form>
           </div>
