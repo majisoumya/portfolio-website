@@ -87,7 +87,7 @@ const WhatIDo = () => {
             <div className="what-corner"></div>
 
             <div className="what-content-in">
-              <h3>MACHINE LEARNING ENGINEER</h3>
+              <h3>MACHINE LEARNING</h3>
               <h4>Building Intelligent AI Systems</h4>
               <p>
                 Developing machine learning models and AI system.
@@ -130,8 +130,8 @@ const WhatIDo = () => {
               <h3>DATA SCIENTIST</h3>
               <h4>Transforming Data into Insights</h4>
               <p>
-               Leveraging statistics, machine learning, 
-               and data visualization to uncover patterns and drive data-driven decision making.
+                Leveraging statistics, machine learning,
+                and data visualization to uncover patterns and drive data-driven decision making.
               </p>
               <h5>Skillset & tools</h5>
               <div className="what-content-flex">
