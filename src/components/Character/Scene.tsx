@@ -27,12 +27,13 @@ const Scene = () => {
       const aspect = container.width / container.height;
       const scene = sceneRef.current;
 
+      const isMobile = window.innerWidth <= 768;
       const renderer = new THREE.WebGLRenderer({
         alpha: true,
-        antialias: true,
+        antialias: !isMobile,
       });
       renderer.setSize(container.width, container.height);
-      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 1.5));
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1;
       canvasDiv.current.appendChild(renderer.domElement);
@@ -116,9 +117,26 @@ const Scene = () => {
         landingDiv.addEventListener("touchend", onTouchEnd);
       }
 
+      let isVisible = true;
+      let observer: IntersectionObserver | null = null;
+      if (canvasDiv.current) {
+        observer = new IntersectionObserver(
+          ([entry]) => {
+            isVisible = entry.isIntersecting;
+          },
+          { threshold: 0.01 }
+        );
+        observer.observe(canvasDiv.current);
+      }
+
       let animationFrameId: number;
       const animate = () => {
         animationFrameId = requestAnimationFrame(animate);
+        
+        const delta = clock.getDelta(); // Read delta every frame to prevent time accumulating
+        
+        if (!isVisible) return; // Skip heavy rendering and logic if off-screen
+
         if (headBone) {
           handleHeadRotation(
             headBone,
@@ -130,7 +148,7 @@ const Scene = () => {
           );
           light.setPointLight(screenLight);
         }
-        const delta = clock.getDelta();
+        
         if (mixer) {
           mixer.update(delta);
         }
@@ -139,6 +157,7 @@ const Scene = () => {
       animate();
       return () => {
         isCancelled = true;
+        if (observer) observer.disconnect();
         cancelAnimationFrame(animationFrameId);
         clearTimeout(debounce);
         scene.clear();
