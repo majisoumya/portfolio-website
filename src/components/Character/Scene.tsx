@@ -53,7 +53,13 @@ const Scene = () => {
       let progress = setProgress((value) => setLoading(value));
       const { loadCharacter } = setCharacter(renderer, scene, camera);
 
+      let resizeHandler: (() => void) | null = null;
+      let debounce: number | undefined;
+      let touchMoveHandler: ((e: TouchEvent) => void) | null = null;
+      let isCancelled = false;
+
       loadCharacter().then((gltf) => {
+        if (isCancelled) return;
         if (gltf) {
           const animations = setAnimations(gltf);
           hoverDivRef.current && animations.hover(gltf, hoverDivRef.current);
@@ -69,9 +75,9 @@ const Scene = () => {
               animations.startIntro();
             }, 2500);
           });
-          window.addEventListener("resize", () =>
-            handleResize(renderer, camera, canvasDiv, character)
-          );
+          resizeHandler = () =>
+            handleResize(renderer, camera, canvasDiv, character!);
+          window.addEventListener("resize", resizeHandler);
         }
       });
 
@@ -81,33 +87,38 @@ const Scene = () => {
       const onMouseMove = (event: MouseEvent) => {
         handleMouseMove(event, (x, y) => (mouse = { x, y }));
       };
-      let debounce: number | undefined;
       const onTouchStart = (event: TouchEvent) => {
         const element = event.target as HTMLElement;
-        debounce = setTimeout(() => {
-          element?.addEventListener("touchmove", (e: TouchEvent) =>
-            handleTouchMove(e, (x, y) => (mouse = { x, y }))
-          );
+        clearTimeout(debounce);
+        debounce = window.setTimeout(() => {
+          touchMoveHandler = (e: TouchEvent) =>
+            handleTouchMove(e, (x, y) => (mouse = { x, y }));
+          element.addEventListener("touchmove", touchMoveHandler);
         }, 200);
       };
 
-      const onTouchEnd = () => {
+      const onTouchEnd = (event: TouchEvent) => {
+        const element = event.target as HTMLElement;
+        if (touchMoveHandler) {
+          element.removeEventListener("touchmove", touchMoveHandler);
+          touchMoveHandler = null;
+        }
         handleTouchEnd((x, y, interpolationX, interpolationY) => {
           mouse = { x, y };
           interpolation = { x: interpolationX, y: interpolationY };
         });
       };
 
-      document.addEventListener("mousemove", (event) => {
-        onMouseMove(event);
-      });
+      document.addEventListener("mousemove", onMouseMove);
       const landingDiv = document.getElementById("landingDiv");
       if (landingDiv) {
         landingDiv.addEventListener("touchstart", onTouchStart);
         landingDiv.addEventListener("touchend", onTouchEnd);
       }
+
+      let animationFrameId: number;
       const animate = () => {
-        requestAnimationFrame(animate);
+        animationFrameId = requestAnimationFrame(animate);
         if (headBone) {
           handleHeadRotation(
             headBone,
@@ -127,12 +138,14 @@ const Scene = () => {
       };
       animate();
       return () => {
+        isCancelled = true;
+        cancelAnimationFrame(animationFrameId);
         clearTimeout(debounce);
         scene.clear();
         renderer.dispose();
-        window.removeEventListener("resize", () =>
-          handleResize(renderer, camera, canvasDiv, character!)
-        );
+        if (resizeHandler) {
+          window.removeEventListener("resize", resizeHandler);
+        }
         if (canvasDiv.current) {
           canvasDiv.current.removeChild(renderer.domElement);
         }
