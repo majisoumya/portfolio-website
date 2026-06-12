@@ -13,6 +13,7 @@ import Certifications from "./Certifications";
 import setSplitText from "./utils/splitText";
 
 const TechStack = lazy(() => import("./TechStack"));
+const Skills = lazy(() => import("./Skills"));
 
 const MainContainer = ({ children }: PropsWithChildren) => {
   const [isDesktopView, setIsDesktopView] = useState<boolean>(
@@ -52,6 +53,9 @@ const MainContainer = ({ children }: PropsWithChildren) => {
                 <TechStack />
               </Suspense>
             )}
+            <Suspense fallback={<div>Loading....</div>}>
+              <Skills />
+            </Suspense>
             <Contact />
           </div>
         </div>

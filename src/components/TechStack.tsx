@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { useRef, useMemo, useState, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Environment } from "@react-three/drei";
+import { Environment, Decal } from "@react-three/drei";
 import {
   BallCollider,
   Physics,
@@ -12,16 +12,22 @@ import {
 
 const textureLoader = new THREE.TextureLoader();
 const imageUrls = [
-  "/images/react2.webp",
-  "/images/next2.webp",
-  "/images/node2.webp",
-  "/images/express.webp",
-  "/images/mongo.webp",
-  "/images/mysql.webp",
-  "/images/typescript.webp",
-  "/images/javascript.webp",
+  "/images/ml/numpy_proper.png",
+  "/images/ml/pandas_proper.png",
+  "/images/ml/sklearn_proper.svg",
+  "/images/ml/tensorflow_proper.png",
+  "/images/ml/keras_proper.png",
+  "/images/ml/pytorch_proper.png",
+  "/images/ml/rag_proper.png",
+  "/images/ml/nlp_proper.png",
+  "/images/ml/llm_proper.png",
+  "/images/ml/genai_proper.png",
 ];
-const textures = imageUrls.map((url) => textureLoader.load(url));
+const textures = imageUrls.map((url) => {
+  const tex = textureLoader.load(url);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+});
 
 const sphereGeometry = new THREE.SphereGeometry(1, 28, 28);
 
@@ -33,7 +39,7 @@ type SphereProps = {
   vec?: THREE.Vector3;
   scale: number;
   r?: typeof THREE.MathUtils.randFloatSpread;
-  material: THREE.MeshStandardMaterial;
+  texture: THREE.Texture;
   isActive: boolean;
 };
 
@@ -41,7 +47,7 @@ function SphereGeo({
   vec = new THREE.Vector3(),
   scale,
   r = THREE.MathUtils.randFloatSpread,
-  material,
+  texture,
   isActive,
 }: SphereProps) {
   const api = useRef<RapierRigidBody | null>(null);
@@ -83,9 +89,23 @@ function SphereGeo({
         receiveShadow
         scale={scale}
         geometry={sphereGeometry}
-        material={material}
         rotation={[0.3, 1, 1]}
-      />
+      >
+        <meshStandardMaterial
+          color="#ffffff"
+          polygonOffset
+          polygonOffsetFactor={-5}
+          flatShading
+          roughness={0.3}
+          metalness={0.2}
+        />
+        <Decal
+          position={[0, 0, 1]}
+          rotation={[0, 0, 0]}
+          scale={1.2}
+          map={texture}
+        />
+      </mesh>
     </RigidBody>
   );
 }
@@ -143,20 +163,6 @@ const TechStack = () => {
       if (observer) observer.disconnect();
     };
   }, []);
-  const materials = useMemo(() => {
-    return textures.map(
-      (texture) =>
-        new THREE.MeshStandardMaterial({
-          map: texture,
-          emissive: "#ffffff",
-          emissiveMap: texture,
-          emissiveIntensity: 0.6,
-          metalness: 0.2,
-          roughness: 0.3,
-        })
-    );
-  }, []);
-
   return (
     <div className="techstack">
       <h2> My Techstack</h2>
@@ -186,7 +192,7 @@ const TechStack = () => {
             <SphereGeo
               key={i}
               {...props}
-              material={materials[Math.floor(Math.random() * materials.length)]}
+              texture={textures[Math.floor(Math.random() * textures.length)]}
               isActive={isActive}
             />
           ))}
