@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import { MdEmail, MdArrowOutward, MdCopyright, MdPhone } from "react-icons/md";
+import { MdEmail, MdCopyright, MdPhone } from "react-icons/md";
 import { FaGithub, FaLinkedin, FaTwitter, FaInstagram } from "react-icons/fa";
 import "./styles/Contact.css";
 
