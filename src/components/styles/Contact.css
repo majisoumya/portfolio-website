@@ -42,17 +42,16 @@
 }
 
 .premium-form {
-  background: rgba(255, 255, 255, 0.03);
+  background: #0f131a;
   border: 1px solid rgba(255, 255, 255, 0.05);
   padding: 40px;
   border-radius: 20px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
   gap: 30px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   transition: transform 0.3s ease;
+  will-change: transform;
 }
 
 .premium-form:hover {
